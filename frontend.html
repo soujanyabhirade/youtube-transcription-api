@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TranscribeIt | YouTube to Text</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #ec4899;
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f8fafc;
+            --text-dim: #94a3b8;
+            --accent: #22d3ee;
+            --error: #ef4444;
+            --success: #10b981;
+            --radius: 16px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.1) 0px, transparent 50%);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+            letter-spacing: -1px;
+        }
+
+        .subtitle {
+            color: var(--text-dim);
+            font-size: 1.1rem;
+        }
+
+        .main-card {
+            background: var(--card);
+            padding: 2.5rem;
+            border-radius: var(--radius);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            margin-bottom: 2rem;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        input {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.2rem 1.2rem 1.2rem 3.5rem;
+            color: var(--text);
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+            background: rgba(15, 23, 42, 0.8);
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 1.2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-dim);
+            transition: color 0.3s;
+        }
+
+        input:focus + .input-icon {
+            color: var(--primary);
+        }
+
+        .button-row {
+            display: flex;
+            gap: 1rem;
+        }
+
+        button {
+            flex: 1;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 1.2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.8rem;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.5);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Loading State */
+        .loading-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(99, 102, 241, 0.1);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .status-text {
+            color: var(--accent);
+            font-weight: 500;
+            font-size: 1.1rem;
+            letter-spacing: 0.5px;
+        }
+
+        /* Results Area */
+        .results-area {
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .icon-btn {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.6rem;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-dim);
+            cursor: pointer;
+            transition: all 0.2s;
+            flex: none;
+        }
+
+        .icon-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text);
+            transform: scale(1.05);
+        }
+
+        .tab-container {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 0.5rem;
+        }
+
+        .tab {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            color: var(--text-dim);
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .transcript-content {
+            background: rgba(15, 23, 42, 0.4);
+            border-radius: 12px;
+            padding: 1.5rem;
+            max-height: 500px;
+            overflow-y: auto;
+            line-height: 1.7;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .segments-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .segment-item {
+            display: flex;
+            gap: 1rem;
+            padding: 0.8rem;
+            border-radius: 8px;
+            transition: background 0.2s;
+            cursor: pointer;
+        }
+
+        .segment-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .timestamp {
+            font-family: monospace;
+            color: var(--accent);
+            font-weight: 600;
+            background: rgba(34, 211, 238, 0.1);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            height: fit-content;
+        }
+
+        .segment-text {
+            color: var(--text);
+        }
+
+        /* Error Toast */
+        .error-message {
+            display: none;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--error);
+            color: #ff8080;
+            padding: 1rem;
+            border-radius: 12px;
+            margin-top: 1rem;
+            font-size: 0.95rem;
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        /* Animations */
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+
+        @media (max-width: 640px) {
+            h1 { font-size: 2.5rem; }
+            .main-card { padding: 1.5rem; }
+            .button-row { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>TranscribeIt</h1>
+            <p class="subtitle">Convert any YouTube video to accurate text in seconds.</p>
+        </header>
+
+        <div class="main-card">
+            <div class="input-group">
+                <input type="text" id="youtube-url" placeholder="Paste YouTube URL here..." autocomplete="off">
+                <i data-lucide="youtube" class="input-icon"></i>
+            </div>
+            
+            <div class="button-row">
+                <button id="transcribe-btn">
+                    <i data-lucide="zap"></i>
+                    Transcribe Video
+                </button>
+            </div>
+
+            <div id="error-box" class="error-message"></div>
+
+            <div id="loading-area" class="loading-container">
+                <div class="spinner"></div>
+                <div id="status-text" class="status-text">Ready to go</div>
+            </div>
+        </div>
+
+        <div id="results-area" class="results-area">
+            <div class="results-header">
+                <h3 id="result-title">Transcription Result</h3>
+                <div class="action-btns">
+                    <button class="icon-btn" id="copy-btn" title="Copy to clipboard">
+                        <i data-lucide="copy"></i>
+                    </button>
+                    <button class="icon-btn" id="download-btn" title="Download TXT">
+                        <i data-lucide="download"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="tab-container">
+                <div class="tab active" data-tab="full">Full Text</div>
+                <div class="tab" data-tab="segments">Segments</div>
+            </div>
+
+            <div id="full-text-view" class="transcript-content">
+                <!-- Transcription text goes here -->
+            </div>
+
+            <div id="segments-view" class="transcript-content" style="display: none;">
+                <div class="segments-list" id="segments-container">
+                    <!-- Segments go here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        const youtubeUrlInput = document.getElementById('youtube-url');
+        const transcribeBtn = document.getElementById('transcribe-btn');
+        const loadingArea = document.getElementById('loading-area');
+        const statusText = document.getElementById('status-text');
+        const errorBox = document.getElementById('error-box');
+        const resultsArea = document.getElementById('results-area');
+        const fullTextView = document.getElementById('full-text-view');
+        const segmentsContainer = document.getElementById('segments-container');
+        const copyBtn = document.getElementById('copy-btn');
+        const downloadBtn = document.getElementById('download-btn');
+
+        let currentTranscription = "";
+
+        // Tab Switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                if (tab.dataset.tab === 'full') {
+                    document.getElementById('full-text-view').style.display = 'block';
+                    document.getElementById('segments-view').style.display = 'none';
+                } else {
+                    document.getElementById('full-text-view').style.display = 'none';
+                    document.getElementById('segments-view').style.display = 'block';
+                }
+            });
+        });
+
+        function formatTime(seconds) {
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = Math.floor(seconds % 60);
+            
+            if (h > 0) {
+                return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            }
+            return `${m}:${s.toString().padStart(2, '0')}`;
+        }
+
+        async function startTranscription() {
+            const url = youtubeUrlInput.value.trim();
+            if (!url) {
+                showError("Please enter a valid YouTube URL");
+                return;
+            }
+
+            // Reset UI
+            errorBox.style.display = 'none';
+            resultsArea.style.display = 'none';
+            loadingArea.style.display = 'flex';
+            transcribeBtn.disabled = true;
+            
+            // Status Sequence Simulation
+            updateStatus("Downloading audio...", "cloud-download");
+            
+            // Start process after a tiny delay for visual feedback
+            setTimeout(() => {
+                const checkStatus = setInterval(() => {
+                    if (statusText.innerText.includes("Downloading")) {
+                        updateStatus("Transcribing with AI...", "cpu");
+                    }
+                }, 10000); // Shift after 10s of wait
+
+                fetch('http://127.0.0.1:8000/transcribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: url })
+                })
+                .then(async response => {
+                    clearInterval(checkStatus);
+                    const data = await response.json();
+                    
+                    if (!response.ok) {
+                        throw new Error(data.detail?.error || data.detail || "Server error occurred");
+                    }
+                    
+                    displayResults(data);
+                })
+                .catch(err => {
+                    clearInterval(checkStatus);
+                    showError(err.message);
+                })
+                .finally(() => {
+                    loadingArea.style.display = 'none';
+                    transcribeBtn.disabled = false;
+                });
+            }, 500);
+        }
+
+        function updateStatus(text, iconName) {
+            statusText.innerHTML = text;
+        }
+
+        function showError(msg) {
+            errorBox.innerText = msg;
+            errorBox.style.display = 'block';
+        }
+
+        function displayResults(data) {
+            resultsArea.style.display = 'block';
+            currentTranscription = data.text;
+            fullTextView.innerText = data.text;
+            
+            segmentsContainer.innerHTML = '';
+            data.segments.forEach(seg => {
+                const item = document.createElement('div');
+                item.className = 'segment-item';
+                item.innerHTML = `
+                    <span class="timestamp">${formatTime(seg.start)}</span>
+                    <span class="segment-text">${seg.text}</span>
+                `;
+                segmentsContainer.appendChild(item);
+            });
+
+            // Smooth scroll to results
+            resultsArea.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Action Handlers
+        copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(currentTranscription);
+            const originalIcon = copyBtn.innerHTML;
+            copyBtn.innerHTML = '<i data-lucide="check" style="color: var(--success)"></i>';
+            lucide.createIcons();
+            setTimeout(() => {
+                copyBtn.innerHTML = originalIcon;
+                lucide.createIcons();
+            }, 2000);
+        });
+
+        downloadBtn.addEventListener('click', () => {
+            const blob = new Blob([currentTranscription], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'transcription.txt';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        });
+
+        transcribeBtn.addEventListener('click', startTranscription);
+        youtubeUrlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') startTranscription();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+fastapi==0.109.0
+uvicorn==0.27.0
+yt-dlp==2024.12.23
+openai-whisper==20231117
+pydantic==2.5.3
+python-multipart==0.0.6
