@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # YouTube Transcription API
 
 FastAPI backend that downloads YouTube videos and transcribes them using OpenAI's Whisper model.
@@ -211,3 +212,7 @@ project/
 ## License
 
 MIT License - See LICENSE file for details
+=======
+# youtube-transcription-api
+AI-powered YouTube video transcription using Whisper AI
+>>>>>>> ca8bf5e0a16e058980692937b637dd7684adc183
